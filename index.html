@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    File Hoster
+  </title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI";
+    }
+
+    .wrapper {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 5% 10%;
+    }
+
+    .header h1 {
+      font-family: "Swis721 BlkEx BT Black";
+    }
+
+    .viewer {
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(3, 1fr);
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 2%;
+      border: 1px solid #eee;
+      border-radius: 10px;
+    }
+
+    .viewer.dragging {
+      border-style: dashed;
+    }
+
+    .viewer .file {
+      width: 100%;
+      padding: 4% 5%;
+      margin: 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+
+    .action {
+      width: 100%;
+    }
+
+    .action #host,
+    .action #upload-btn {
+      border: 0;
+      float: right;
+      padding: 1% 10%;
+      margin: 1% 0;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      color: white;
+      background: blue;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .action #upload-btn {
+      float: left;
+    }
+
+    .action #host:active,
+    .action #upload-btn:active {
+      background: rgb(98, 98, 255);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>File Hoster</h1>
+    </div>
+    <div class="viewer" id="dropzone">You can view available files here</div>
+    <div class="action">
+      <label>
+        <input type="file" id="file-upload" multiple style="display: none;" />
+        <span id="upload-btn">UPLOAD</span>
+      </label>
+      <button type="submit" id="host">HOST</button>
+    </div>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById("dropzone")
+    const hostbtn = document.getElementById("host")
+    const fileupload = document.getElementById("file-upload")
+
+    const showDragZone = (e) => {
+      e.preventDefault()
+      dropzone.classList.add("dragging")
+    }
+    const hideDragZone = (e) => {
+      e.preventDefault()
+      dropzone.classList.remove("dragging")
+    }
+
+    dropzone.addEventListener("dragover", (e) => showDragZone(e))
+    dropzone.addEventListener("dragend", (e) => hideDragZone(e))
+    dropzone.addEventListener("dragleave", (e) => hideDragZone(e))
+
+    let hostedFiles = []
+
+    function updateViewer() {
+      if (hostedFiles.length == 0) return
+
+      dropzone.innerHTML = ""
+
+      for (let file of hostedFiles) {
+        const fileElement = document.createElement("p")
+        fileElement.innerHTML = `${file.name}`
+        fileElement.classList.add("file")
+
+        dropzone.append(fileElement)
+      }
+    }
+
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault()
+      dropzone.classList.remove("dragging")
+
+      const droppedFiles = e.dataTransfer.files
+      for (let file of droppedFiles) {
+        hostedFiles.push(file)
+      }
+
+      updateViewer()
+    })
+
+    fileupload.addEventListener('change', (e) => {
+      e.preventDefault()
+
+      const droppedFiles = e.target.files
+      for (let file of droppedFiles) {
+        hostedFiles.push(file)
+      }
+
+      updateViewer()
+    })
+
+    hostbtn.addEventListener("click", (e) => {
+      e.preventDefault()
+
+      const data = new FormData()
+
+      for (let file of hostedFiles) {
+        data.append("files[]", file, file.name)
+      }
+
+      fetch("/upload", {
+        method: "POST",
+        body: data,
+      })
+    })
+
+  </script>
+</body>
+
+</html>
